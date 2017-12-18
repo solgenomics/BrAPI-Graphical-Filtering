@@ -16,11 +16,11 @@ function GraphicalFilter(){
   /**  
    * gfilter.create - creates a new graphical filter and table
    *    
-   * @param  {type} filter_selector selector of filter div   
-   * @param  {type} table_selector  selector of datatable div    
-   * @param  {type} data            data for filtering   
-   * @param  {type} tableCols       columns to show in the table   
-   * @param  {type} rangeTraits     traits which can be filtered by range   
+   * @param  {string/selector} filter_selector selector of filter div   
+   * @param  {string/selector} table_selector  selector of datatable div    
+   * @param  {array} data            data for filtering   
+   * @param  {array} tableCols       columns to show in the table   
+   * @param  {array} rangeTraits     traits which can be filtered by range   
    */   
   gfilter.create = function(filter_selector,table_selector,data,tableCols,rangeTraits){
     var canv = d3.select(filter_selector);
@@ -62,9 +62,9 @@ function GraphicalFilter(){
   /**  
    * Filter - constructor for the base Filter class
    *    
-   * @param  {type} parent      
-   * @param  {type} depth       
-   * @param  {type} operator    
+   * @param  {Filter} parent      
+   * @param  {integer} depth       
+   * @param  {string} operator    
    */   
   function Filter(parent,depth,operator){
     this.filterID = filterID();
@@ -107,7 +107,7 @@ function GraphicalFilter(){
   /**  
    * Filter.prototype.draw - redraws componants shared by both filter groups and range filters (all filter types).
    *    
-   * @param  {type} node where to draw   
+   * @param  {DOM node} node where to draw   
    */   
   Filter.prototype.draw = function(node){
     if (node) this.node = node;
