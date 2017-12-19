@@ -1,43 +1,43 @@
 
 $(document).ready(function(){
-    var run = false;
-    $("#brapi-form").submit(function(){
-        if (run) {
-            $("#filtered_results").DataTable().destroy();
-            $("#filtered_results").html("");
-        }
-        run = true;
-        var form = $(this).serializeArray().reduce(function(vals,entry){
-            vals[entry.name] = entry.value
-            return vals
-        },{});
-        params = {"studyDbIds" : [form.study], "observationLevel" : form.unit};
-        loadBrAPIData(form.server,params,function(response){
-          useBrAPIData(response,(!!form.group));
-        });
-        return false;
-    })
+  var run = false;
+  $("#brapi-form").submit(function(){
+    if (run) {
+      $("#filtered_results").DataTable().destroy();
+      $("#filtered_results").html("");
+    }
+    run = true;
+    var form = $(this).serializeArray().reduce(function(vals,entry){
+      vals[entry.name] = entry.value
+      return vals
+    },{});
+    params = {"studyDbIds" : [form.study], "observationLevel" : form.unit};
+    loadBrAPIData(form.server,params,function(response){
+      useBrAPIData(response,(!!form.group));
+    });
+    return false;
+  })
 });
 
 function loadBrAPIData(server,parameters,success){
-    url = server;
-    if (url.slice(0,8)!="https://" && url.slice(0,7)!="http://"){
-        url ="http://"+url;
-    }
-    url+= "/brapi/v1/phenotypes-search";
-    data = {
-        "pageSize" : 10000000,
-        "page" : 0
-    };
-    d3.entries(parameters).forEach(function(entry){
-        data[entry.key] = data[entry.key]||entry.value;
-    });
-    $.ajax({
-        type: "POST",
-        url: url,
-        data: data,
-        success: success,
-    });
+  url = server;
+  if (url.slice(0,8)!="https://" && url.slice(0,7)!="http://"){
+    url ="http://"+url;
+  }
+  url+= "/brapi/v1/phenotypes-search";
+  data = {
+    "pageSize" : 10000000,
+    "page" : 0
+  };
+  d3.entries(parameters).forEach(function(entry){
+    data[entry.key] = data[entry.key]||entry.value;
+  });
+  $.ajax({
+    type: "POST",
+    url: url,
+    data: data,
+    success: success,
+  });
 };
 
 // filters and modifies the response and then creates the root filter object
