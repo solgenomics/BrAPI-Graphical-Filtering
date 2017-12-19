@@ -68,11 +68,10 @@ function useBrAPIData(response,groupByAccession){
   });
   var tableCols = [
     {title:"Study",data:"studyName"},
-    {title:"Block",data:"blockNumber"},
-    {title:"Plot",data:"plotNumber"},
+    {title:"Name",data:"observationUnitName"},
     {title:"Accession",data:"germplasmName"},
   ];
-  
+  console.log(data);
   if (groupByAccession){
     var grouped = d3.nest().key(function(d){return d.germplasmDbId}).entries(data);
     var newdata = grouped.map(function(group){
@@ -94,7 +93,7 @@ function useBrAPIData(response,groupByAccession){
     console.log(newdata);
     var tableCols = [
       {title:"Accession", data:"germplasmName"},
-      {title:"Units", data:"count"}
+      {title:"Unit Count", data:"count"}
     ];
     data = newdata;
   }
