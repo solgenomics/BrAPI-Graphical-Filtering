@@ -11,11 +11,21 @@
         <div style="margin:1em">
             <h1>A Minimal Graphical Filtering Example</h1>
             <h4><a href="https://github.com/solgenomics/BrAPI-Graphical-Filtering">Source</a> ( Requires: D3, jQuery, Bootstrap [css & js], Datables [js] )</h4>
-            <form id="brapi-form" class="form-inline">
+            <form id="brapi-form" action="#"  class="form-inline">
                 <div class="form-group">
                     <label for="brapi-server">BrAPI Server Adress</label>
                     <input type="text" class="form-control" id="brapi-server" name="server" value="127.0.0.1:3000">
                 </div>
+                <div class="form-group">
+                    <label for="brapi-username">Username</label>
+                    <input type="text" class="form-control" id="brapi-username" name="username" placeholder="John_Doe">
+                </div>
+                <div class="form-group">
+                    <label for="brapi-password">Password</label>
+                    <input type="password" class="form-control" id="brapi-password" name="password" placeholder="••••••••••••">
+                </div>
+                <br>
+                <br>
                 <div class="form-group">
                     <label for="brapi-study">Study ID</label>
                     <input type="text" class="form-control" id="brapi-study" name="study" value="139">
@@ -32,7 +42,7 @@
                       <input type="checkbox" name="group"> Group By Accession
                     </label>
                 </div>
-                <input type="submit" id="load-brapi" class="btn btn-primary" value="Load"/>
+                <input type="submit" action="#" id="load-brapi" class="btn btn-primary" value="Load"/>
                 
             </form>
             <div id="filter_div" style="margin:1em"></div>
