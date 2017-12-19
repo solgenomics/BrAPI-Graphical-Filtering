@@ -20,7 +20,20 @@
                     <label for="brapi-study">Study ID</label>
                     <input type="text" class="form-control" id="brapi-study" name="study" value="139">
                 </div>
-                <input type="submit" action="#" id="load-brapi" class="btn btn-primary" value="Load"/>
+                <div class="form-group">
+                    <label for="brapi-unit">Unit Type</label>
+                    <select id="brapi-unit" class="form-control" name="unit">
+                        <option value="plot">Plot</option>
+                        <option value="plant">Plant</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>
+                      <input type="checkbox" name="group"> Group By Accession
+                    </label>
+                </div>
+                <input type="submit" id="load-brapi" class="btn btn-primary" value="Load"/>
+                
             </form>
             <div id="filter_div" style="margin:1em"></div>
             <table id="filtered_results"></table>

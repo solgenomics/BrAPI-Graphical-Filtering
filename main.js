@@ -11,8 +11,10 @@ $(document).ready(function(){
             vals[entry.name] = entry.value
             return vals
         },{});
-        params = {"studyDbIds" : [form.study], "observationLevel" : "plot"};
-        loadBrAPIData(form.server,params,useBrAPIData);
+        params = {"studyDbIds" : [form.study], "observationLevel" : form.unit};
+        loadBrAPIData(form.server,params,function(response){
+          useBrAPIData(response,(!!form.group));
+        });
         return false;
     })
 });
@@ -40,8 +42,7 @@ function loadBrAPIData(server,parameters,success){
 
 // filters and modifies the response and then creates the root filter object
 // and datatable
-function useBrAPIData(response){
-  console.log(response);
+function useBrAPIData(response,groupByAccession){
   var traits = {};
   var data = response.result.data
     .map(function(observeUnit){
@@ -57,24 +58,54 @@ function useBrAPIData(response){
       });
       return newObj;
     });
-  var rangeTraits = d3.keys(traits);
+  var trait_names = d3.keys(traits);
   data.forEach(function(datum){
-    rangeTraits.forEach(function(trait){
-      datum[trait] = datum[trait] || null;
+    trait_names.forEach(function(trait){
+      if (datum[trait]==undefined||datum[trait]==null||datum[trait]==NaN){
+        datum[trait] = null
+      }
     })
-  })
-
-  // use the list of shared traits to create dataTables columns
+  });
   var tableCols = [
     {title:"Study",data:"studyName"},
     {title:"Block",data:"blockNumber"},
     {title:"Plot",data:"plotNumber"},
     {title:"Accession",data:"germplasmName"},
-  ].concat(rangeTraits.map(function(d){
+  ];
+  
+  if (groupByAccession){
+    var grouped = d3.nest().key(function(d){return d.germplasmDbId}).entries(data);
+    var newdata = grouped.map(function(group){
+      var newDatum = {};
+      newDatum.germplasmName = group.values[0].germplasmName;
+      newDatum.germplasmDbId = group.key;
+      newDatum.count = group.values.length;
+      newDatum.group = group.values;
+      trait_names.forEach(function(trait_key){
+        var avg = d3.mean(group.values,function(d){
+          if (d[trait_key]!==null){
+            return d[trait_key];
+          }
+        });
+        newDatum[trait_key] = avg==undefined?null:avg;
+      });
+      return newDatum;
+    });
+    console.log(newdata);
+    var tableCols = [
+      {title:"Accession", data:"germplasmName"},
+      {title:"Units", data:"count"}
+    ];
+    data = newdata;
+  }
+  
+
+  // use the list of shared traits to create dataTables columns
+  tableCols = tableCols.concat(trait_names.map(function(d){
     return {title:d,data:d};
   }));
   
   // create the root filter object and datatable
   var gfilter = GraphicalFilter();
-  gfilter.create("#filter_div","#filtered_results",data,tableCols,rangeTraits);
+  gfilter.create("#filter_div","#filtered_results",data,tableCols,trait_names);
 }
