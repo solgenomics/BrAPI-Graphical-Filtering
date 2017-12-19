@@ -577,7 +577,7 @@ function GraphicalFilter(){
       var filtered = visible_data.filter(function(d){
         return negate ? !sFilter(d) : sFilter(d);
       }).length;
-      status.text(filtered+"/"+total+" selected.");
+      status.text(filtered+"/"+total);
       var transition = svg.select(".brush")
         .transition().duration(this.ttime);
       var bscale = this.x.copy()
@@ -610,7 +610,7 @@ function GraphicalFilter(){
       console.log(brushExtent)
       this.brush.move(transition,brushExtent);
     } else {
-      status.text("Select a range.");
+      status.text("Nothing");
     }
 
     var d = this.x.domain();

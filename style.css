@@ -215,6 +215,14 @@
   padding-top: 0.6rem;
 }
 
+.filter-status::after {
+    content: " selected.";
+}
+
+.filter-negated>.filter-panel>.panel-body>.filter-status::after {
+    content: " deselected.";
+}
+
 .filter-wrapper .dropdown{
   display: inline-block;
   width: 2.5em;
