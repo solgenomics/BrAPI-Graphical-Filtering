@@ -22,7 +22,7 @@ $(document).ready(function(){
 function loadBrAPIData(server,parameters,success,username,password){
   var base_url = server;
   if (base_url.slice(0,8)!="https://" && base_url.slice(0,7)!="http://"){
-    base_url ="http://"+base_url;
+    base_url ="https://"+base_url;
   }
   if (base_url.slice(-1)!="/"){
     base_url+="/";
