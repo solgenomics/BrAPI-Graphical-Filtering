@@ -1,6 +1,10 @@
-;
+(function (global, factory) {
+  typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory() :
+  typeof define === 'function' && define.amd ? define(factory) :
+  (global.GraphicalFilter = factory());
+}(this, (function () { 'use strict';
 
-function GraphicalFilter(){
+function GraphicalFilter(brapi_node,trait_accessor,table_col_accessor,table_col_order,group_key_accessor){
   "use strict";
   
   //statics
@@ -13,50 +17,126 @@ function GraphicalFilter(){
     return function(){return i++;};
   })();
   
+  // parse data
+  var tableCols = table_col_order.map(function(key){
+        return {title:key,data:"meta."+key.replace(".","\\.")}
+      }),
+      allTraits = {},
+      rangeTraits = [];
+  var data_node = brapi_node.map(function(d){
+    var traits = trait_accessor(d);
+    for (var key in traits) {
+      if (traits.hasOwnProperty(key)) {
+        allTraits[key]=null;
+      }
+    }
+    return {
+      'traits':traits,
+      'meta':table_col_accessor(d),
+      'data':d
+    };
+  }).all(function(data){
+    data.forEach(function(d){
+      d.traits = Object.assign({},allTraits,d.traits);
+    });
+    for (var key in allTraits) {
+      if (allTraits.hasOwnProperty(key)) {
+        rangeTraits.push(key);
+        tableCols.push({title:key,data:"traits."+key.replace(".","\\.")});
+      }
+    }
+  });
+  
+  if (group_key_accessor!=undefined){
+    data_node = data_node.reduce().fork(function(all){
+      var key_map = {};
+      all.each(function(d){
+        var key = group_key_accessor(d.data);
+        if (key_map[key]){
+          key_map[key].push(d);
+        } else {
+          key_map[key] = [d];
+        }
+      });
+      var groups = [];
+      for (var key in key_map) {
+        if (key_map.hasOwnProperty(key)) {
+          groups.push(key_map[key]);
+        }
+      }
+      return groups;
+    }).map(function(arr){
+      var grouped = {
+        "traits":{},
+        "meta":Object.assign({}, arr[0].meta),
+        data:arr
+      };
+      var trait_counts = {};
+      arr.forEach(function(d){
+        for (var key in d.traits) {
+          if (d.traits.hasOwnProperty(key)) {
+            if(grouped.traits[key]){
+              grouped.traits[key]+= +d.traits[key];
+              trait_counts[key]+=1;
+            } else {
+              grouped.traits[key] = +d.traits[key];
+              trait_counts[key] = 1;
+            }
+          }
+        }
+      });
+      for (var key in grouped.traits) {
+        if (grouped.traits.hasOwnProperty(key)) {
+          grouped.traits[key] = grouped.traits[key]/trait_counts[key];
+        }
+      }
+      return grouped;
+    });
+  }
+  
   /**  
-   * gfilter.create - creates a new graphical filter and table
+   * gfilter.draw - creates a new graphical filter and table
    *    
    * @param  {string/selector} filter_selector selector of filter div   
    * @param  {string/selector} table_selector  selector of datatable div    
-   * @param  {array} data            data for filtering   
-   * @param  {array} tableCols       columns to show in the table   
-   * @param  {array} rangeTraits     traits which can be filtered by range   
    */   
-  gfilter.create = function(filter_selector,table_selector,data,tableCols,rangeTraits){
-    var canv = d3.select(filter_selector);
-    canv.html("");
-    
-    //create the root filter group
-    gfilter.root = new FilterGroup(null,0,"init");
-    gfilter.rangeTraits = rangeTraits;
-    
-    //draw the filter
-    gfilter.root.draw(canv.node());
-    
-    //create the output table
-    gfilter.results_table = $(table_selector).DataTable({
-      data: data,
-      "columns": tableCols
-    });
-    
-    gfilter.data = data;
-    
-    
-    /**    
-     * gfilter - Redraws everything      
-     */     
-    gfilter.redraw = function(){
-      gfilter.root.updateData(gfilter.data);
-      gfilter.root.draw();
-
-      var currentFilter = gfilter.root.getFilter();
-      $.fn.dataTableExt.afnFiltering.push(function( _1, _2, dataIndex ){
-        return currentFilter(gfilter.data[dataIndex]);
+  gfilter.draw = function(filter_selector,table_selector){
+    data_node.all(function(data){
+      var canv = d3.select(filter_selector);
+      canv.html("");
+      
+      //create the root filter group
+      gfilter.root = new FilterGroup(null,0,"init");
+      gfilter.rangeTraits = rangeTraits;
+      
+      //draw the filter
+      gfilter.root.draw(canv.node());
+      
+      //create the output table
+      gfilter.results_table = $(table_selector).DataTable({
+        data: data,
+        "columns": tableCols
       });
-      gfilter.results_table.draw();
-      $.fn.dataTableExt.afnFiltering.pop();
-    }
-    gfilter.redraw();
+      
+      gfilter.data = data;
+      
+      
+      /**    
+       * gfilter - Redraws everything      
+       */     
+      gfilter.redraw = function(){
+        gfilter.root.updateData(gfilter.data);
+        gfilter.root.draw();
+
+        var currentFilter = gfilter.root.getFilter();
+        $.fn.dataTableExt.afnFiltering.push(function( _1, _2, dataIndex ){
+          return currentFilter(gfilter.data[dataIndex]);
+        });
+        gfilter.results_table.draw();
+        $.fn.dataTableExt.afnFiltering.pop();
+      };
+      gfilter.redraw();
+    });
   };
   
   /**  
@@ -251,7 +331,7 @@ function GraphicalFilter(){
         d.children.push(new FilterRange(d,d.depth+1,op));
         gfilter.redraw();
         return false;
-      })
+      });
     newFilterMenuContents.append("li").append("a").text("New Group")
       .attr("href","")
       .classed("dropdown-item",true)
@@ -262,7 +342,7 @@ function GraphicalFilter(){
         d.children.push(new FilterGroup(d,d.depth+1,op));
         gfilter.redraw();
         return false;
-      })
+      });
 
     //draw children
     fgenter.merge(fg)
@@ -292,10 +372,10 @@ function GraphicalFilter(){
         .merge(subfilters)
           .each(function(d){
             d.draw(this);
-          })
-      })
+          });
+      });
     this.updateRemoveButton();
-  }
+  };
   
   FilterGroup.prototype.getConjointGroups = function(returnFilters){
     // returns arrays of filters connected by ANDs or AND-NOTs
@@ -318,7 +398,7 @@ function GraphicalFilter(){
       }
     }
     return cjGroups;
-  }
+  };
 
   function FilterRange(parent,depth,operator){
     //constructor
@@ -355,7 +435,7 @@ function GraphicalFilter(){
       var res = val!=null?(val >= hist.brushRange[0] && val <= hist.brushRange[1]):false;
       return (negate? !res : res);
     };
-  }
+  };
   FilterRange.prototype.updateData = function(data){
     this.data = data;
   };
@@ -391,7 +471,7 @@ function GraphicalFilter(){
           var fr = d3.select(this).datum();
           fr.filterTrait = $(this).val();
           fr.valueAccessor = function(d){
-            return parseFloat(d[fr.filterTrait]);
+            return parseFloat(d.traits[fr.filterTrait]);
           };
           gfilter.redraw();
         });
@@ -401,7 +481,7 @@ function GraphicalFilter(){
     }
     this.refreshSelect();
     if (this.valueAccessor && this.filterTrait){
-      var body = panel.select(".panel-body")
+      var body = panel.select(".panel-body");
       var svg = body.selectAll("svg").data([this]);
       this.body = panel.select(".panel-body").node();
       if (!svg.enter().empty()){
@@ -448,7 +528,7 @@ function GraphicalFilter(){
   FilterRange.prototype.drawHistogram = function(){
     var frself = this;
     var visible_data = this.data.filter(function(d){
-      var v = frself.valueAccessor(d)
+      var v = frself.valueAccessor(d);
       return v!=null && !isNaN(v);
     });
     console.log(visible_data);
@@ -607,7 +687,7 @@ function GraphicalFilter(){
           brushExtent[0]-=1;
         }
       }
-      console.log(brushExtent)
+      console.log(brushExtent);
       this.brush.move(transition,brushExtent);
     } else {
       status.text("Nothing");
@@ -643,7 +723,7 @@ function GraphicalFilter(){
             }
             //if there arent enough items in the selection (2) expand the selection to include the nearest ones.
             if (hist.getFilter()&&hist.data.filter(hist.getFilter()).length<2){
-              console.log("adjusted")
+              console.log("adjusted");
               var values = hist.data.map(hist.valueAccessor);
               values.sort(function(a,b){return a-b;});
               var midVal = d3.mean(hist.brushRange);
@@ -651,7 +731,7 @@ function GraphicalFilter(){
               hist.brushRange = [values[midI],values[midI+1]];
             }
             gfilter.redraw();
-            clearTimeout(hist.brush_timeout)
+            clearTimeout(hist.brush_timeout);
           },d3.event.type=="end"?0:hist.ttime);
         }
       }
@@ -659,3 +739,7 @@ function GraphicalFilter(){
   };
   return gfilter;
 }
+
+return GraphicalFilter;
+
+})));

@@ -1,0 +1,33 @@
+{
+  "name": "@solgenomics/brapi-graphical-filtering",
+  "version": "0.0.0",
+  "description": "",
+  "main": "build/PedigreeViewer.js",
+  "scripts": {
+    "prepare": "rm -rf build && mkdir build && rollup -f umd -n GraphicalFilter -o build/GraphicalFilter.js -- main.js",
+    "build_example": "rm -rf example && mkdir example && wrapbrapp && cp build/GraphicalFilter.js node_modules/@solgenomics/brapijs/build/BrAPI.js example/",
+    "version": "npm run prepare && npm run build_example && git add example"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/solgenomics/BrAPI-Graphical-Filtering.git"
+  },
+  "author": "David Lyon <npm@dauglyon.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/solgenomics/BrAPI-Graphical-Filtering/issues"
+  },
+  "homepage": "https://github.com/solgenomics/BrAPI-Graphical-Filtering#readme",
+  "dependencies": {
+    "@solgenomics/brapijs": "^0.3.3",
+    "@solgenomics/brapp-wrapper": "^1.1.0"
+  },
+  "brapp": {
+    "out": "example/index.html",
+    "name": "Graphical Filtering",
+    "link": "https://github.com/solgenomics/BrAPI-Graphical-Filtering",
+    "forward": "example_src/forward.html",
+    "main": "example_src/main.html",
+    "scripts": "example_src/scripts.html"
+  }
+}

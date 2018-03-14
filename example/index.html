@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>
+      BrAPI Graphical Filtering
+    </title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/css/bootstrap.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+  </head>
+  <body style="padding:2em;">
+    <h1>
+      BrAPI Graphical Filtering
+    </h1>
+    <div class="forward-container">
+      <link rel="stylesheet" property="stylesheet" href="/css/GraphicalFiltering.css">
+      <link rel="stylesheet" property="stylesheet" href="https://cdn.datatables.net/1.10.16/css/jquery.dataTables.min.css">
+      <form id="brapi-form" action="#" class="form-inline" style="margin:1em" name="brapi-form">
+        <div class="form-group">
+          <label for="brapi-server">BrAPI Server Adress</label> <input type="text" class="form-control" id="brapi-server" name="server" value="yambase.org">
+        </div>
+        <div class="form-group">
+          <label for="brapi-username">Username</label> <input type="text" class="form-control" id="brapi-username" name="username" placeholder="John_Doe">
+        </div>
+        <div class="form-group">
+          <label for="brapi-password">Password</label> <input type="password" class="form-control" id="brapi-password" name="password" placeholder="••••••••••••">
+        </div><br>
+        <br>
+        <div class="form-group">
+          <label for="brapi-study">Study ID</label> <input type="text" class="form-control" id="brapi-study" name="study" value="20">
+        </div>
+        <div class="form-group">
+          <label for="brapi-unit">Unit Type</label> <select id="brapi-unit" class="form-control" name="unit">
+            <option value="plot">
+              Plot
+            </option>
+            <option value="plant">
+              Plant
+            </option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label><input type="checkbox" name="group"> Group By Accession</label>
+        </div><input type="submit" action="#" id="load-brapi" class="btn btn-primary" value="Load">
+      </form>
+    </div>
+    <div class="brapp-container" style="position:relative;">
+      <div value="brapp-wrapper" style="display:inline-block; border:solid 1px #ccc;border-radius:4px;">
+        <div class="brapp-body" style="background-color:#fff;border-top-left-radius:4px;border-top-right-radius:4px;">
+          <div style="width:1000px;padding:1em;position:relative;">
+            <div id="filter_div" style="margin:1em"></div>
+            <div style="width:100%;overflow-x:scroll;">
+              <table id="filtered_results"></table>
+            </div>
+          </div>
+          <div style="clear:both"></div>
+        </div>
+        <div class="brapp-footer" style="background-color:#ddd;border-top:solid 1px #ccc;font-family:Arial;color:#555;font-size:11px;padding:0.3em;border-bottom-left-radius:4px;border-bottom-right-radius:4px;">
+          <div style="min-height:14px;text-align:right;">
+            <a href="https://github.com/solgenomics/BrAPI-Graphical-Filtering" style="color:inherit;white-space:nowrap;text-decoration:underline;">Graphical Filtering</a> developed at the <a href="https://btiscience.org/" style="color:inherit;white-space:nowrap;text-decoration:underline;">Boyce Thompson Institute</a>
+          </div>
+        </div>
+      </div>
+    </div><script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.js">
+</script> <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/4.12.0/d3.js">
+</script> <script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/js/bootstrap.min.js">
+</script> <script src="https://cdn.datatables.net/1.10.16/js/jquery.dataTables.min.js" charset="utf-8">
+</script> <script src="BrAPI.js">
+</script> <script src="GraphicalFilter.js" charset="utf-8">
+</script> <script type="text/javascript">
+$(document).ready(function() {
+        var run = false;
+        $("#brapi-form").submit(function() {
+            if (run) {
+                $("#filtered_results").DataTable().destroy();
+                $("#filtered_results").html("");
+            }
+            run = true;
+            var form = $(this).serializeArray().reduce(function(vals, entry) {
+                vals[entry.name] = entry.value
+                return vals
+            }, {});
+            var base_url = form.server;
+            if (base_url.slice(0, 8) != "https://" && base_url.slice(0, 7) != "http://") {
+                base_url = "https://" + base_url;
+            }
+            if (base_url.slice(-1) != "/") {
+                base_url += "/";
+            }
+            var auth = form.username ? {
+                'username': form.username,
+                'password': form.password
+            } : undefined;
+            var brapi = BrAPI(base_url + "brapi/v1", auth);
+            var params = {
+                "studyDbIds": [form.study],
+                "observationLevel": form.unit
+            };
+            GraphicalFilter(
+                brapi.phenotypes_search(params),
+                function(d) { // traits/values
+                    var traits = {}
+                    d.observations.forEach(function(obs){
+                          traits[obs.observationVariableName] = obs.value;
+                    });
+                    return traits;
+                },
+                function(d) { // header columns accessor
+                    return {
+                        'Study':d.studyName,
+                        'Unit':d.observationUnitName,
+                        'Accession':d.germplasmName,
+                    }
+                },
+                ["Study","Unit","Accession"], // header column order
+                form.group? function(d) { // groupBy function
+                    return d.germplasmDbId
+                } : undefined
+            ).draw("#filter_div","#filtered_results")
+            return false;
+        })
+    });
+    </script>
+  </body>
+</html>

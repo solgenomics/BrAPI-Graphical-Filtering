@@ -1,7 +1,8 @@
-# Graphical Filtering of Observations through [BrAPI](https://github.com/plantbreeding/API)
-Try it out [here](https://solgenomics.github.io/BrAPI-Graphical-Filtering/)
+# [BrAPI](https://github.com/plantbreeding/API) Graphical Filtering [![GitHub release](https://img.shields.io/github/release/solgenomics/brapi-graphical-filtering.svg)](https://github.com/solgenomics/BrAPI-Graphical-Filtering/releases) [![GitHub (Pre-)Release Date](https://img.shields.io/github/release-date-pre/solgenomics/brapi-graphical-filtering.svg)](https://github.com/solgenomics/BrAPI-Graphical-Filtering/releases)
 
-![GIF of Example Implementation](readme_assets/example.gif)
+Try it out [here](https://solgenomics.github.io/BrAPI-Graphical-Filtering/example)
+
+![GIF of Example Implementation](example.gif)
 
 ### Requirements
 - [Bootstrap](https://github.com/twbs/bootstrap) (3.3) (CSS & JS)
