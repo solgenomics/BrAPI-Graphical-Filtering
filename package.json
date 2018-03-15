@@ -1,6 +1,6 @@
 {
   "name": "@solgenomics/brapi-graphical-filtering",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "",
   "main": "build/PedigreeViewer.js",
   "scripts": {
