@@ -42,15 +42,15 @@ function GraphicalFilter(brapi_node,trait_accessor,table_col_accessor,table_col_
     for (var key in allTraits) {
       if (allTraits.hasOwnProperty(key)) {
         rangeTraits.push(key);
-        tableCols.push({title:key,data:"traits."+key.replace(".","\\.")});
       }
     }
   });
   
   if (group_key_accessor!=undefined){
+    tableCols.push({title:"Count",data:"count"});
     data_node = data_node.reduce().fork(function(all){
       var key_map = {};
-      all.each(function(d){
+      all.forEach(function(d){
         var key = group_key_accessor(d.data);
         if (key_map[key]){
           key_map[key].push(d);
@@ -69,7 +69,8 @@ function GraphicalFilter(brapi_node,trait_accessor,table_col_accessor,table_col_
       var grouped = {
         "traits":{},
         "meta":Object.assign({}, arr[0].meta),
-        data:arr
+        data:arr,
+        "count":arr.length
       };
       var trait_counts = {};
       arr.forEach(function(d){
@@ -93,6 +94,14 @@ function GraphicalFilter(brapi_node,trait_accessor,table_col_accessor,table_col_
       return grouped;
     });
   }
+  
+  data_node.all(function(data){
+    for (var key in allTraits) {
+      if (allTraits.hasOwnProperty(key)) {
+        tableCols.push({title:key,data:"traits."+key.replace(".","\\.")});
+      }
+    }
+  });
   
   /**  
    * gfilter.draw - creates a new graphical filter and table

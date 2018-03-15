@@ -843,7 +843,7 @@ class Reduce_Node extends Context_Node{
         this.addTask(task);
         var self = this;
         parent.addFinishHook(function(data, key){
-            out_datum = reductionFunc==undefined?data:data.reduce(reductionFunc,initialValue);
+            var out_datum = reductionFunc==undefined?data:data.reduce(reductionFunc,initialValue);
             task.complete(out_datum);
             self.publishResult(task);
         });
@@ -862,10 +862,11 @@ class Fork_Node extends Context_Node{
                 var task = new Task(forked_key, key);
                 forked_key+=1;
                 self.addTask(task);
-                task.complete(newDatum);
+                task.stored_result = newDatum;
                 newTasks.push(task);
             });
             newTasks.forEach(function(task){
+                task.complete(task.stored_result);
                 self.publishResult(task);
             });
         });

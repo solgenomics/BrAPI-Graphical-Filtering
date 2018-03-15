@@ -105,14 +105,18 @@ $(document).ready(function() {
                     });
                     return traits;
                 },
-                function(d) { // header columns accessor
+                form.group? function(d) {
+                    return {
+                        'Accession':d.germplasmName
+                    }
+                } : function(d) { // header columns accessor
                     return {
                         'Study':d.studyName,
                         'Unit':d.observationUnitName,
                         'Accession':d.germplasmName,
                     }
                 },
-                ["Study","Unit","Accession"], // header column order
+                form.group? ["Accession"] : ["Study","Unit","Accession"], // header column order
                 form.group? function(d) { // groupBy function
                     return d.germplasmDbId
                 } : undefined

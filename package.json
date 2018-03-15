@@ -19,7 +19,7 @@
   },
   "homepage": "https://github.com/solgenomics/BrAPI-Graphical-Filtering#readme",
   "dependencies": {
-    "@solgenomics/brapijs": "^0.3.3",
+    "@solgenomics/brapijs": "^0.3.5",
     "@solgenomics/brapp-wrapper": "^1.1.0"
   },
   "brapp": {
