@@ -2,7 +2,7 @@
   "name": "@solgenomics/brapi-graphical-filtering",
   "version": "0.1.1",
   "description": "",
-  "main": "build/PedigreeViewer.js",
+  "main": "build/GraphicalFilter.js",
   "scripts": {
     "prepare": "rm -rf build && mkdir build && rollup -f umd -n GraphicalFilter -o build/GraphicalFilter.js -- main.js",
     "build_example": "rm -rf example && mkdir example && wrapbrapp && cp build/GraphicalFilter.js node_modules/@solgenomics/brapijs/build/BrAPI.js example/",
@@ -18,9 +18,14 @@
     "url": "https://github.com/solgenomics/BrAPI-Graphical-Filtering/issues"
   },
   "homepage": "https://github.com/solgenomics/BrAPI-Graphical-Filtering#readme",
-  "dependencies": {
-    "@solgenomics/brapijs": "^0.3.5",
+  "devDependencies": {
     "@solgenomics/brapp-wrapper": "^1.1.0"
+  },
+  "peerDependencies": {
+    "jquery":"^3.0.0",
+    "bootstrap":"^3.3.0",
+    "@solgenomics/brapijs": "^0.3.6",
+    "d3": "^4.11.0"
   },
   "brapp": {
     "out": "example/index.html",
