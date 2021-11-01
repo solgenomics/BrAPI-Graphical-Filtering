@@ -88,7 +88,7 @@ function GraphicalFilter(brapi_node,trait_accessor,table_col_accessor,table_col_
       });
       for (var key in grouped.traits) {
         if (grouped.traits.hasOwnProperty(key)) {
-          grouped.traits[key] = grouped.traits[key]/trait_counts[key];
+          grouped.traits[key] = Math.round((grouped.traits[key]/trait_counts[key]) * 100) / 100;
         }
       }
       return grouped;
