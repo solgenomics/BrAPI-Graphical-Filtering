@@ -131,12 +131,15 @@ export default function GraphicalFilter(brapi_node,trait_accessor,table_col_acce
         gfilter.root.updateData(gfilter.data);
         gfilter.root.draw();
 
+        // clear the previous custom filter
+        // we only add custom filters here, so this should be safe
+        $.fn.dataTableExt.afnFiltering.pop();
+
         var currentFilter = gfilter.root.getFilter();
         $.fn.dataTableExt.afnFiltering.push(function( _1, _2, dataIndex ){
           return currentFilter(gfilter.data[dataIndex]);
         });
         gfilter.results_table.draw();
-        $.fn.dataTableExt.afnFiltering.pop();
       }
       gfilter.redraw();
     })
