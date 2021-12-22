@@ -108,8 +108,9 @@ function GraphicalFilter(brapi_node,trait_accessor,table_col_accessor,table_col_
    *    
    * @param  {string/selector} filter_selector selector of filter div   
    * @param  {string/selector} table_selector  selector of datatable div    
+   * @param  {function name} Function that is called every time DataTables performs a draw. Default to empty. 
    */   
-  gfilter.draw = function(filter_selector,table_selector){
+  gfilter.draw = function(filter_selector,table_selector,draw_callback = ''){
     data_node.all(function(data){
       var canv = d3.select(filter_selector);
       canv.html("");
@@ -124,7 +125,8 @@ function GraphicalFilter(brapi_node,trait_accessor,table_col_accessor,table_col_
       //create the output table
       gfilter.results_table = $(table_selector).DataTable({
         data: data,
-        "columns": tableCols
+        "columns": tableCols,
+        "drawCallback": draw_callback
       });
       
       gfilter.data = data;
