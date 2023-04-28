@@ -1,4 +1,4 @@
-export default function GraphicalFilter(brapi_node,trait_accessor,table_col_accessor,table_col_order,group_key_accessor){
+export default function GraphicalFilter(brapi_node,trait_accessor,table_col_accessor,table_col_order,group_key_accessor,useGroups){
   "use strict";
   
   //statics
@@ -140,6 +140,8 @@ export default function GraphicalFilter(brapi_node,trait_accessor,table_col_acce
           return currentFilter(gfilter.data[dataIndex]);
         });
         gfilter.results_table.draw();
+        $.fn.dataTableExt.afnFiltering.pop();//this is new in the gf check if works
+        $("#filtered_results_wrapper").hide();
       }
       gfilter.redraw();
     })
@@ -154,6 +156,7 @@ export default function GraphicalFilter(brapi_node,trait_accessor,table_col_acce
    */   
   function Filter(parent,depth,operator){
     this.filterID = filterID();
+    this.useGroups = useGroups || false;
     this.type = "default";
     this.parent = parent || null;
     this.depth = depth || 0;
@@ -313,7 +316,8 @@ export default function GraphicalFilter(brapi_node,trait_accessor,table_col_acce
     fgenter.append("span")
       .classed("filter-wrapper-children",true);
 
-    var dropID = this.filterID+"dropdown";
+    if(this.useGroups){
+    var dropID = "dropdown"+this.filterID;        
     var newFilterMenu = fgenter.append("div")
       .classed("dropdown",true);
     newFilterMenu.append("button")
@@ -349,6 +353,26 @@ export default function GraphicalFilter(brapi_node,trait_accessor,table_col_acce
         gfilter.redraw();
         return false;
       })
+    } else {
+      var dropID = "dropdown"+this.filterID;
+      var newFilterMenu = fgenter.append("div")
+        .classed("dropdown",true);
+      newFilterMenu.append("button")
+        .classed("btn btn-secondary dropdown-toggle",true)
+        .attr("type","button")
+        .attr("id",dropID)
+        .attr("data-toggle","dropdown")
+        .attr("aria-haspopup","true")
+        // .attr("aria-expanded","false");
+        .on("click",function(d){
+          d3.event.preventDefault();
+          d3.event.stopPropagation();
+          var op = d.children.length==0 ? "init" : "and";
+          d.children.push(new FilterRange(d,d.depth+1,op));
+          gfilter.redraw();
+          return false;
+        });
+    }
 
     //draw children
     fgenter.merge(fg)
@@ -381,6 +405,8 @@ export default function GraphicalFilter(brapi_node,trait_accessor,table_col_acce
           })
       })
     this.updateRemoveButton();
+    // $("#dropdown0").click();
+    // $("#dropdown0").trigger("click");
   }
   
   FilterGroup.prototype.getConjointGroups = function(returnFilters){
@@ -388,7 +414,7 @@ export default function GraphicalFilter(brapi_node,trait_accessor,table_col_acce
     var cjGroups = [[]];
     if (this.children[0]){
       if (returnFilters){
-        cjGroups[cjGroups.length-1].push(this.children[0].getFilter());
+        cjGroups[cjGroups.length-1].push(this.children[0].getFilterString());
       } else {
         cjGroups[cjGroups.length-1].push(this.children[0]);
       }
@@ -411,6 +437,8 @@ export default function GraphicalFilter(brapi_node,trait_accessor,table_col_acce
     Filter.call(this,parent,depth,operator);
     this.type = "filterrange";
     this.brushRange = [null,null];
+    this.filterValue = null;
+    this.traitType = null;
     this.centerVal = 0;
     this.centerID = 0;
     this.b_width = this.width - (this.margin.left+this.margin.right);
@@ -430,6 +458,18 @@ export default function GraphicalFilter(brapi_node,trait_accessor,table_col_acce
     height:150,
     margin:{top:4,bottom:20,left:4,right:4}
   });
+
+  FilterRange.prototype.getFilterString = function(){
+    if (this.filterValue==null) return null;
+    var list = this;
+    var negate = (this.operator.indexOf("not", this.operator.length - 3) != -1);
+
+    return function(d){
+      var val = list.valueAccessor(d); console.log("val",val,list.filterValue);
+      var res = val!=null?(val == list.filterValue ):false;
+      return (negate? !res : res);
+    };
+  };
 
   FilterRange.prototype.getFilter = function(){
     if (this.brushRange[0]==null) return null;
@@ -464,21 +504,32 @@ export default function GraphicalFilter(brapi_node,trait_accessor,table_col_acce
     Filter.prototype.draw.call(this,node);
     var panel = d3.select(this.node).selectAll(".filter-panel")
       .data([this]);
-    if (!panel.enter().empty()){
+    if (!panel.enter().empty()){alert(":)");
       var pe = panel.enter().append('div')
         .classed("filter-panel-range filter-panel panel panel-default",true);
       var heading = pe.append('div')
         .classed("panel-heading",true);
       var body = pe.append('div')
-        .classed("panel-body",true);
+        .classed("panel-body",true)
+        .attr("id", "body_filter");//console.log("body",body);
       var select = heading.append("select")
         .classed("form-control",true)
         .on("change",function(){
           var fr = d3.select(this).datum();
+          fr.traitType = "numeric";
           fr.filterTrait = $(this).val();
+          fr.filterValue = null;
           fr.valueAccessor = function(d){
-            return parseFloat(d.traits[fr.filterTrait]);
+            var v = parseFloat(d.traits[fr.filterTrait]);
+            if(isNaN(v)){
+              v = d.traits[fr.filterTrait];
+              this.traitType = "string";
+            }            
+            return v;
+            // return parseFloat(d.traits[fr.filterTrait]);
           };
+          this.traitType = fr.traitType;
+          console.log("d.values1", fr.traitType);
           gfilter.redraw();
         });
       this.select = select.node();
@@ -490,7 +541,7 @@ export default function GraphicalFilter(brapi_node,trait_accessor,table_col_acce
       var body = panel.select(".panel-body")
       var svg = body.selectAll("svg").data([this]);
       this.body = panel.select(".panel-body").node();
-      if (!svg.enter().empty()){
+      if (!svg.enter().empty() && this.traitType == "numeric"){
         var svgE = svg.enter().append("svg");
         svgE.attr("width","100%")
           .attr("shape-rendering","geometricPrecision")
@@ -524,12 +575,63 @@ export default function GraphicalFilter(brapi_node,trait_accessor,table_col_acce
           .call(this.brush);
         this.svg = svgE.node();
       }
-      this.drawHistogram();
+      
+      // if(this.traitType == "numeric"){
+      //   console.log("traittype", this.traitType);
+      // this.drawHistogram();
+      // } else {
+      //   console.log("traittype", this.traitType);
+      //   var body = panel.select(".panel-body");
+        this.plotgroup = body.node();
+        this.drawList();
+      // }
     } else {
       panel.selectAll("svg").remove();
     }
     this.updateRemoveButton();
   };
+
+  FilterRange.prototype.drawList = function(){
+    var frself = this;
+
+    let visible_data = [];
+    //filters duplicated traits
+    frself.data.forEach((d) => {
+      var element = frself.valueAccessor(d);
+      if (!visible_data.includes(element) && element != null) {
+        visible_data.push(element);
+      }
+    });
+
+    console.log("visible_data", visible_data);    
+    var list = this;
+
+
+    var checkBoxWrapper = d3.select(this.plotgroup);
+    // var checkBoxWrapper = d3.select("#body_filter");
+    checkBoxWrapper.selectAll(".checkboxes").remove();
+
+    var checkBoxGroup = checkBoxWrapper
+              .selectAll(".checkbox")
+              .data(visible_data)
+              .enter()
+              .append("div")
+              .attr("class", "checkboxes");    console.log("plot",this.plotgroup);
+      checkBoxGroup.append("input")
+          .attr("type", "checkbox")
+          .attr("id", function(d) { return d; })
+          .attr("value", function(d) { return d; })
+          .attr("class", "checkboxes")
+          .on("change", function(){
+            list.filterValue = this.id;
+            gfilter.redraw();
+            $("#filtered_results_wrapper").show();
+          });
+      checkBoxGroup.append("label")
+          .attr('for', function(d) { return d; })
+          .text(function(d) { return d; })
+          .attr("class", "checkboxes");
+  }
 
   FilterRange.prototype.drawHistogram = function(){
     var frself = this;
