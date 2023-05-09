@@ -141,7 +141,6 @@ export default function GraphicalFilter(brapi_node,trait_accessor,table_col_acce
         });
         gfilter.results_table.draw();
         $.fn.dataTableExt.afnFiltering.pop();//this is new in the gf check if works
-        // $("#filtered_results_wrapper").hide();
       }
       gfilter.redrawTable = function(){
         gfilter.root.updateData(gfilter.data);
@@ -156,7 +155,7 @@ export default function GraphicalFilter(brapi_node,trait_accessor,table_col_acce
         });
         gfilter.results_table.draw();
         $.fn.dataTableExt.afnFiltering.pop();//this is new in the gf check if works
-        // $("#filtered_results_wrapper").hide();
+        $("#filtered_results_wrapper").hide();
       }
       gfilter.redraw();
     })
@@ -604,12 +603,14 @@ export default function GraphicalFilter(brapi_node,trait_accessor,table_col_acce
           .classed("brush",true)
           .call(this.brush);
         this.svg = svgE.node();
+        
       }
 
       if(traitType == "numeric"){
         this.drawHistogram();
         this.plotgroup = body.node();
       } else {
+        $("#filtered_results_wrapper").hide();
         this.plotgroup = body.node();
         this.drawList();
       }
@@ -679,7 +680,6 @@ export default function GraphicalFilter(brapi_node,trait_accessor,table_col_acce
       return v!=null && !isNaN(v);
     });
     
-    $("#filtered_results_wrapper").show();
     var negate = (this.operator.indexOf("not", this.operator.length - 3) != -1);
     var extent = d3.extent(visible_data, this.valueAccessor);
     if (visible_data.length<2) extent = [-1,1];
@@ -880,7 +880,7 @@ export default function GraphicalFilter(brapi_node,trait_accessor,table_col_acce
               hist.brushRange = [values[midI],values[midI+1]];
             }
             gfilter.redraw();
-            clearTimeout(hist.brush_timeout)
+            clearTimeout(hist.brush_timeout);
           },d3.event.type=="end"?0:hist.ttime);
         }
       }
