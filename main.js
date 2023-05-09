@@ -141,7 +141,22 @@ export default function GraphicalFilter(brapi_node,trait_accessor,table_col_acce
         });
         gfilter.results_table.draw();
         $.fn.dataTableExt.afnFiltering.pop();//this is new in the gf check if works
-        $("#filtered_results_wrapper").hide();
+        // $("#filtered_results_wrapper").hide();
+      }
+      gfilter.redrawTable = function(){
+        gfilter.root.updateData(gfilter.data);
+
+        // clear the previous custom filter
+        // we only add custom filters here, so this should be safe
+        $.fn.dataTableExt.afnFiltering.pop();
+
+        var currentFilter = gfilter.root.getFilter();
+        $.fn.dataTableExt.afnFiltering.push(function( _1, _2, dataIndex ){
+          return currentFilter(gfilter.data[dataIndex]);
+        });
+        gfilter.results_table.draw();
+        $.fn.dataTableExt.afnFiltering.pop();//this is new in the gf check if works
+        // $("#filtered_results_wrapper").hide();
       }
       gfilter.redraw();
     })
@@ -414,7 +429,11 @@ export default function GraphicalFilter(brapi_node,trait_accessor,table_col_acce
     var cjGroups = [[]];
     if (this.children[0]){
       if (returnFilters){
-        cjGroups[cjGroups.length-1].push(this.children[0].getFilterString());
+        if(this.children[0].traitType == "numeric"){
+          cjGroups[cjGroups.length-1].push(this.children[0].getFilter());
+        } else {
+          cjGroups[cjGroups.length-1].push(this.children[0].getFilterString());
+        }
       } else {
         cjGroups[cjGroups.length-1].push(this.children[0]);
       }
@@ -465,8 +484,8 @@ export default function GraphicalFilter(brapi_node,trait_accessor,table_col_acce
     var negate = (this.operator.indexOf("not", this.operator.length - 3) != -1);
 
     return function(d){
-      var val = list.valueAccessor(d); console.log("val",val,list.filterValue);
-      var res = val!=null?(val == list.filterValue ):false;
+      var val = list.valueAccessor(d);
+      var res = val!=null?(list.filterValue.includes(val) ):false;
       return (negate? !res : res);
     };
   };
@@ -504,14 +523,14 @@ export default function GraphicalFilter(brapi_node,trait_accessor,table_col_acce
     Filter.prototype.draw.call(this,node);
     var panel = d3.select(this.node).selectAll(".filter-panel")
       .data([this]);
-    if (!panel.enter().empty()){alert(":)");
+    if (!panel.enter().empty()){
       var pe = panel.enter().append('div')
         .classed("filter-panel-range filter-panel panel panel-default",true);
       var heading = pe.append('div')
         .classed("panel-heading",true);
       var body = pe.append('div')
         .classed("panel-body",true)
-        .attr("id", "body_filter");//console.log("body",body);
+        .attr("id", "body_filter");
       var select = heading.append("select")
         .classed("form-control",true)
         .on("change",function(){
@@ -521,15 +540,16 @@ export default function GraphicalFilter(brapi_node,trait_accessor,table_col_acce
           fr.filterValue = null;
           fr.valueAccessor = function(d){
             var v = parseFloat(d.traits[fr.filterTrait]);
-            if(isNaN(v)){
-              v = d.traits[fr.filterTrait];
-              this.traitType = "string";
-            }            
+            if(d.traits[fr.filterTrait]){
+              if(isNaN(v)){
+                v = d.traits[fr.filterTrait];
+                fr.traitType = "string";
+              } else{
+                v = parseFloat(d.traits[fr.filterTrait]);
+              }
+            }         
             return v;
-            // return parseFloat(d.traits[fr.filterTrait]);
           };
-          this.traitType = fr.traitType;
-          console.log("d.values1", fr.traitType);
           gfilter.redraw();
         });
       this.select = select.node();
@@ -541,8 +561,18 @@ export default function GraphicalFilter(brapi_node,trait_accessor,table_col_acce
       var body = panel.select(".panel-body")
       var svg = body.selectAll("svg").data([this]);
       this.body = panel.select(".panel-body").node();
-      if (!svg.enter().empty() && this.traitType == "numeric"){
-        var svgE = svg.enter().append("svg");
+
+      var frself = this;
+      var traitType = "numeric";
+      frself.data.forEach((d) => {
+        var element = frself.valueAccessor(d);
+        if(frself.traitType != "numeric" && element != null){
+          traitType = "string";
+        }
+      });
+
+      if (!svg.enter().empty() && traitType == "numeric"){
+        var svgE = svg.enter().append("svg").attr("id","svg-bg");
         svgE.attr("width","100%")
           .attr("shape-rendering","geometricPrecision")
           .attr("viewBox","0 0 "+this.width+" "+this.height);
@@ -575,16 +605,14 @@ export default function GraphicalFilter(brapi_node,trait_accessor,table_col_acce
           .call(this.brush);
         this.svg = svgE.node();
       }
-      
-      // if(this.traitType == "numeric"){
-      //   console.log("traittype", this.traitType);
-      // this.drawHistogram();
-      // } else {
-      //   console.log("traittype", this.traitType);
-      //   var body = panel.select(".panel-body");
+
+      if(traitType == "numeric"){
+        this.drawHistogram();
+        this.plotgroup = body.node();
+      } else {
         this.plotgroup = body.node();
         this.drawList();
-      // }
+      }
     } else {
       panel.selectAll("svg").remove();
     }
@@ -594,13 +622,17 @@ export default function GraphicalFilter(brapi_node,trait_accessor,table_col_acce
   FilterRange.prototype.drawList = function(){
     var frself = this;
 
+    d3.select("#svg-bg").remove();
+    d3.selectAll("#input").remove();
+    d3.select("#status").remove();
     let visible_data = [];
-    //filters duplicated traits
+
     frself.data.forEach((d) => {
       var element = frself.valueAccessor(d);
-      if (!visible_data.includes(element) && element != null) {
+      if (element && (!visible_data.includes(element)) ) {
         visible_data.push(element);
       }
+
     });
 
     console.log("visible_data", visible_data);    
@@ -608,7 +640,6 @@ export default function GraphicalFilter(brapi_node,trait_accessor,table_col_acce
 
 
     var checkBoxWrapper = d3.select(this.plotgroup);
-    // var checkBoxWrapper = d3.select("#body_filter");
     checkBoxWrapper.selectAll(".checkboxes").remove();
 
     var checkBoxGroup = checkBoxWrapper
@@ -616,15 +647,21 @@ export default function GraphicalFilter(brapi_node,trait_accessor,table_col_acce
               .data(visible_data)
               .enter()
               .append("div")
-              .attr("class", "checkboxes");    console.log("plot",this.plotgroup);
+              .attr("class", "checkboxes");
       checkBoxGroup.append("input")
           .attr("type", "checkbox")
           .attr("id", function(d) { return d; })
           .attr("value", function(d) { return d; })
           .attr("class", "checkboxes")
           .on("change", function(){
-            list.filterValue = this.id;
-            gfilter.redraw();
+            var selectedValues = [];
+            checkBoxGroup.selectAll(".checkboxes").each(function(d){
+              if(this.checked){
+                selectedValues.push(this.id);
+              }
+            });
+            list.filterValue = selectedValues;
+            gfilter.redrawTable();
             $("#filtered_results_wrapper").show();
           });
       checkBoxGroup.append("label")
@@ -634,12 +671,15 @@ export default function GraphicalFilter(brapi_node,trait_accessor,table_col_acce
   }
 
   FilterRange.prototype.drawHistogram = function(){
+    d3.selectAll(".checkboxes").remove();
+
     var frself = this;
     var visible_data = this.data.filter(function(d){
       var v = frself.valueAccessor(d)
       return v!=null && !isNaN(v);
     });
-    console.log(visible_data);
+    
+    $("#filtered_results_wrapper").show();
     var negate = (this.operator.indexOf("not", this.operator.length - 3) != -1);
     var extent = d3.extent(visible_data, this.valueAccessor);
     if (visible_data.length<2) extent = [-1,1];
@@ -738,6 +778,7 @@ export default function GraphicalFilter(brapi_node,trait_accessor,table_col_acce
     var rangeFormat = d3.format(".5s");
     inputs.enter()
       .append("input")
+      .attr("id","input")
       .classed("form-control input-sm filter-range-form",true)
       // .attr("type","number")
       .attr("step","0.1")
@@ -754,7 +795,7 @@ export default function GraphicalFilter(brapi_node,trait_accessor,table_col_acce
       });
     var status = d3.select(this.body)
       .selectAll(".filter-status").raise().data([0]);
-    status = status.enter().append("div")
+    status = status.enter().append("div").attr("id","status")
       .classed("filter-status",true)
       .merge(status);
     var svg = d3.select(this.svg);
