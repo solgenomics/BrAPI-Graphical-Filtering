@@ -114,7 +114,7 @@ export default function GraphicalFilter(brapi_node,trait_accessor,table_col_acce
       
       //draw the filter
       gfilter.root.draw(canv.node());
-      
+      console.log("tableCols",tableCols);
       //create the output table
       gfilter.results_table = $(table_selector).DataTable({
         data: data,
@@ -155,7 +155,7 @@ export default function GraphicalFilter(brapi_node,trait_accessor,table_col_acce
         });
         gfilter.results_table.draw();
         $.fn.dataTableExt.afnFiltering.pop();//this is new in the gf check if works
-        $("#filtered_results_wrapper").hide();
+        // $("#filtered_results_wrapper").hide();
       }
       gfilter.redraw();
     })
@@ -610,7 +610,7 @@ export default function GraphicalFilter(brapi_node,trait_accessor,table_col_acce
         this.drawHistogram();
         this.plotgroup = body.node();
       } else {
-        $("#filtered_results_wrapper").hide();
+        // $("#filtered_results_wrapper").hide();
         this.plotgroup = body.node();
         this.drawList();
       }
