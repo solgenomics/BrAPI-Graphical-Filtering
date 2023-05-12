@@ -118,9 +118,25 @@ export default function GraphicalFilter(brapi_node,trait_accessor,table_col_acce
       //create the output table
       gfilter.results_table = $(table_selector).DataTable({
         data: data,
-        "columns": tableCols
+        "columns": tableCols,
+        buttons: [
+          {
+            extend: 'copy',
+            text: 'Copy to clipboard',
+            exportOptions: {
+                columns: [ 0,1 ]
+            }
+          },
+          {
+            extend: 'excelHtml5',
+            exportOptions: {
+                columns: ':visible'
+            }
+          },
+        ],
+        "dom": "Bfrtip"
       });
-      
+
       gfilter.data = data;
       
       
